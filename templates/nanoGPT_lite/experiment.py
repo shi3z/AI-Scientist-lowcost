@@ -383,7 +383,9 @@ def train(dataset="shakespeare_char", out_dir="run_0", seed_offset=0):
     )
 
     # poor man's data loader
-    data_dir = os.path.join("../../data", dataset)
+    #data_dir = os.path.join("../../data", dataset)
+    data_dir = os.path.join("data", dataset)
+
     # data_dir = os.path.join("../../../data", dataset)
 
     def get_batch(split):

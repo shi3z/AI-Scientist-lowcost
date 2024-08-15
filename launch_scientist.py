@@ -47,8 +47,8 @@ def parse_arguments():
         "--model",
         type=str,
         #default="claude-3-5-sonnet-20240620",
-        default="gpt-4o-mini-2024-07-18",
-        choices=["claude-3-5-sonnet-20240620","gpt-4o-mini-2024-07-18", "gpt-4o-2024-05-13", "deepseek-coder-v2-0724", "llama3.1-405b"],
+        default="gpt-4o-2024-08-06",
+        choices=["claude-3-5-sonnet-20240620","gpt-4o-2024-08-06","gpt-4o-mini-2024-07-18", "gpt-4o-2024-05-13", "deepseek-coder-v2-0724", "llama3.1-405b"],
         help="Model to use for AI Scientist.",
     )
     parser.add_argument(
@@ -141,7 +141,7 @@ def do_idea(
         io = InputOutput(yes=True, chat_history_file=f"{folder_name}/{idea_name}_aider.txt")
         if model == "hybrid":
             #main_model = Model("claude-3-5-sonnet-20240620")
-            main_model = Model("gpt-4o-mini-2024-07-18")
+            main_model = Model("gpt-4o-2024-08-06")
         elif model == "deepseek-coder-v2-0724":
             main_model = Model("deepseek/deepseek-coder")
         elif model == "llama3.1-405b":
@@ -173,7 +173,7 @@ def do_idea(
             fnames = [exp_file, writeup_file, notes]
             if model == "hybrid":
                 #main_model = Model("gpt-4o-2024-05-13")
-                main_model = Model("gpt-4o-mini-2024-07-18")
+                main_model = Model("gpt-4o-2024-08-06")
             elif model == "deepseek-coder-v2-0724":
                 main_model = Model("deepseek/deepseek-coder")
             elif model == "llama3.1-405b":
@@ -269,7 +269,7 @@ if __name__ == "__main__":
         print(f"Using Anthropic API with model {args.model}.")
         client_model = "claude-3-5-sonnet-20240620"
         client = anthropic.Anthropic()
-    elif args.model == "gpt-4o-2024-05-13" or args.model == "gpt-4o-mini-2024-07-18" or args.model == "hybrid":
+    elif args.model in "gpt-4o"  or args.model == "hybrid":
         import openai
 
         print(f"Using OpenAI API with model {args.model}.")
