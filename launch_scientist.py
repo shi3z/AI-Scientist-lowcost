@@ -46,8 +46,9 @@ def parse_arguments():
     parser.add_argument(
         "--model",
         type=str,
-        default="claude-3-5-sonnet-20240620",
-        choices=["claude-3-5-sonnet-20240620", "gpt-4o-2024-05-13", "deepseek-coder-v2-0724", "llama3.1-405b"],
+        #default="claude-3-5-sonnet-20240620",
+        default="gpt-4o-mini-2024-07-18",
+        choices=["claude-3-5-sonnet-20240620","gpt-4o-mini-2024-07-18", "gpt-4o-2024-05-13", "deepseek-coder-v2-0724", "llama3.1-405b"],
         help="Model to use for AI Scientist.",
     )
     parser.add_argument(
@@ -268,7 +269,7 @@ if __name__ == "__main__":
         print(f"Using Anthropic API with model {args.model}.")
         client_model = "claude-3-5-sonnet-20240620"
         client = anthropic.Anthropic()
-    elif args.model == "gpt-4o-2024-05-13" or args.model == "hybrid":
+    elif args.model == "gpt-4o-2024-05-13" or args.model == "gpt-4o-mini-2024-07-18" or args.model == "hybrid":
         import openai
 
         print(f"Using OpenAI API with model {args.model}.")
