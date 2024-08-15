@@ -220,7 +220,8 @@ def do_idea(
             writeup_file = osp.join(folder_name, "latex", "template.tex")
             fnames = [exp_file, writeup_file, notes]
             if model == "hybrid":
-                main_model = Model("gpt-4o-2024-05-13")
+                #main_model = Model("gpt-4o-2024-05-13")
+                main_model = Model("gpt-4o-mini-2024-07-18")
             elif model == "deepseek-coder-v2-0724":
                 main_model = Model("deepseek/deepseek-coder")
             elif model == "llama3.1-405b":
