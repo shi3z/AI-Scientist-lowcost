@@ -11,6 +11,7 @@ import torch
 import torch.nn as nn
 from torch.nn import functional as F
 import argparse
+from genetic_algorithm import genetic_algorithm, Hyperparameters
 
 
 # --- BEGIN model.py ---
@@ -313,7 +314,7 @@ class GPT(nn.Module):
 
 
 # --- END model.py ---
-def train(dataset="shakespeare_char", out_dir="run_0", seed_offset=0):
+def train(hyperparameters, dataset="shakespeare_char", out_dir="run_0", seed_offset=0):
     # -----------------------------------------------------------------------------
     # default config values designed to train a gpt2 (124M) on OpenWebText
     # data
@@ -328,11 +329,11 @@ def train(dataset="shakespeare_char", out_dir="run_0", seed_offset=0):
     always_save_checkpoint = False  # we expect to overfit on this small dataset, so only save when val improves
     never_save_checkpoint = True  # never save checkpoints
     # model
-    n_layer = 6  # baby GPT model :)
-    n_head = 6
-    n_embd = 384
-    dropout = 0.2  # for pretraining 0 is good, for finetuning try 0.1+
-    bias = False  # do we use bias inside LayerNorm and Linear layers?
+    n_layer = hyperparameters.n_layer
+    n_head = hyperparameters.n_head
+    n_embd = hyperparameters.n_embd
+    dropout = hyperparameters.dropout
+    bias = hyperparameters.bias
     # adamw optimizer
     learning_rate = 1e-3 if dataset == "shakespeare_char" else 5e-4
     max_iters = 5000 if dataset == "shakespeare_char" else 100000
@@ -430,33 +431,58 @@ def train(dataset="shakespeare_char", out_dir="run_0", seed_offset=0):
         meta_vocab_size = meta["vocab_size"]
         print(f"found vocab_size = {meta_vocab_size} (inside {meta_path})")
 
-    # model init
-    model_args = dict(
-        n_layer=n_layer,
-        n_head=n_head,
-        n_embd=n_embd,
-        block_size=block_size,
-        bias=bias,
-        vocab_size=None,
-        dropout=dropout,
-    )  # start with model_args from command line
-    # init a new model from scratch
-    print("Initializing a new model from scratch")
-    # determine the vocab size we'll use for from-scratch training
-    if meta_vocab_size is None:
-        print(
-            "defaulting to vocab_size of GPT-2 to 50304 (50257 rounded up for efficiency)"
-        )
-    model_args["vocab_size"] = meta_vocab_size if meta_vocab_size is not None else 50304
-    gptconf = GPTConfig(**model_args)
-    model = GPT(gptconf)
-    # crop down the model block size if desired, using model surgery
-    if block_size < model.config.block_size:
-        model.crop_block_size(block_size)
-        model_args["block_size"] = (
-            block_size  # so that the checkpoint will have the right value
-        )
-    model.to(device)
+    return final_info, train_log_info, val_log_info
+
+def main():
+    parser = argparse.ArgumentParser(description="Run experiment")
+    parser.add_argument("--out_dir", type=str, default="run_0", help="Output directory")
+    args = parser.parse_args()
+
+    if __name__ == "__main__":
+        num_seeds = {
+            "shakespeare_char": 1,
+        }
+
+        out_dir = args.out_dir
+        all_results = {}
+        final_infos = {}
+        config = {
+            'max_layers': 12,
+            'max_heads': 12,
+            'min_embd': 128,
+            'max_embd': 768,
+            'max_dropout': 0.5
+        }
+        for dataset in num_seeds.keys():
+            final_info_list = []
+            best_hyperparameters = genetic_algorithm(config, train, generations=10, pop_size=20, num_parents=10)
+            for seed_offset in range(num_seeds[dataset]):
+                final_info, train_info, val_info = train(best_hyperparameters, dataset, out_dir, seed_offset)
+                all_results[f"{dataset}_{seed_offset}_final_info"] = final_info
+                all_results[f"{dataset}_{seed_offset}_train_info"] = train_info
+                all_results[f"{dataset}_{seed_offset}_val_info"] = val_info
+                final_info_list.append(final_info)
+            final_info_dict = {
+                k: [d[k] for d in final_info_list] for k in final_info_list[0].keys()
+            }
+            means = {f"{k}_mean": np.mean(v) for k, v in final_info_dict.items()}
+            stderrs = {
+                f"{k}_stderr": np.std(v) / len(v) for k, v in final_info_dict.items()
+            }
+            final_infos[dataset] = {
+                "means": means,
+                "stderrs": stderrs,
+                "final_info_dict": final_info_dict,
+            }
+
+        with open(os.path.join(out_dir, "final_info.json"), "w") as f:
+            json.dump(final_infos, f)
+
+        with open(os.path.join(out_dir, "all_results.npy"), "wb") as f:
+            np.save(f, all_results)
+
+if __name__ == "__main__":
+    main()
 
     # initialize a GradScaler. If enabled=False scaler is a no-op
     scaler = torch.cuda.amp.GradScaler(enabled=(dtype == "float16"))
