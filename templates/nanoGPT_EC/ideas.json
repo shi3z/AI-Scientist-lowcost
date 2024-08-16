@@ -1,0 +1,274 @@
+[
+    {
+        "Name": "gender_based_evolutionary_architecture",
+        "Title": "Gender-based Evolutionary Architecture Search: Efficiency vs. Performance Prediction",
+        "Experiment": "Implement a gender-based genetic algorithm for architecture optimization. 'Male' architectures compete for early learning efficiency, while 'female' architectures evolve to predict final performance accurately. Each 'male' individual encodes hyperparameters (layers, filters, etc.) and is evaluated on learning speed in initial epochs. 'Female' individuals develop evaluation functions to predict which 'male' architectures will achieve the highest accuracy with the fewest parameters after full training. In each generation, top 'male' architectures (based on early efficiency) are paired with top 'female' predictors (based on prediction accuracy of final performance). Offspring inherit traits from both 'parents', creating new architecture candidates and prediction functions. This approach aims to balance rapid initial learning with long-term performance, potentially discovering architectures that are both quick to train and highly accurate.",
+        "Interestingness": 9,
+        "Feasibility": 6,
+        "Novelty": 8
+    },
+    {
+        "Name": "evolutionary_llm_architecture",
+        "Title": "Evolutionary Architecture Search: Optimal Network Structure",
+        "Experiment": "Use genetic algorithms to optimize the neural network architecture. Each individual encodes hyperparameters such as number of layers, filter sizes, and channel counts. In each generation, select  architectures with the highest accuracy, apply crossover and mutation to generate a new generation. ",
+        "Interestingness": 8,
+        "Feasibility": 7,
+        "Novelty": 6
+    },
+    {
+        "Name": "adaptive_block_size",
+        "Title": "Adaptive Block Size: Dynamic Context Window Adjustment for Efficient Training",
+        "Experiment": "Modify the model to dynamically adjust its block size during training, starting with a smaller block size and gradually increasing it. This could potentially lead to faster initial training and better long-range dependency learning.",
+        "Interestingness": 6,
+        "Feasibility": 4,
+        "Novelty": 4
+    },
+    {
+        "Name": "layerwise_learning_rates",
+        "Title": "Layer-wise Learning Rate Adaptation: Optimizing Training Dynamics in Transformer Models",
+        "Experiment": "Implement layer-wise learning rates, where each transformer layer has its own learning rate. Modify the configure_optimizers function to assign different learning rates to different layers, with deeper layers having lower learning rates. Compare the training dynamics, convergence speed, and final performance with the baseline model.",
+        "Interestingness": 4,
+        "Feasibility": 6,
+        "Novelty": 2
+    },
+    {
+        "Name": "auxiliary_task",
+        "Title": "Auxiliary Task for Enhanced Language Model Training: Next Character Prediction",
+        "Experiment": "Implement an auxiliary task in the form of a next character prediction head. Modify the model to include an auxiliary output layer that predicts the next character in the sequence. During the forward pass, compute the logits for both the main task (text generation) and the auxiliary task. Combine the cross-entropy loss from both tasks to update the model's parameters. Compare the performance of the model with and without the auxiliary task by evaluating metrics such as training loss, validation loss, and generated text quality.",
+        "Interestingness": 7,
+        "Feasibility": 8,
+        "Novelty": 6
+    },
+    {
+        "Name": "curriculum_learning",
+        "Title": "Curriculum Learning: Incremental Context Window for Enhanced Training",
+        "Experiment": "Modify the training loop to periodically increase the block size (context window) starting with a smaller block size and gradually increasing it. Update the get_batch function to handle dynamic block sizes and ensure the gradient accumulation steps and batch size are adjusted accordingly to maintain a constant number of tokens per iteration. Compare the training dynamics, convergence speed, and final performance with the baseline model.",
+        "Interestingness": 8,
+        "Feasibility": 7,
+        "Novelty": 7
+    },
+    {
+        "Name": "multitask_learning",
+        "Title": "Multitask Learning: Enhancing Language Models with Next Word Prediction",
+        "Experiment": "Modify the model to include an additional output layer for next word prediction. Implement a combined loss function that incorporates both the original text generation task loss and the new next word prediction task loss. Update the forward pass to compute logits for both tasks. Train the model using the combined loss and compare the performance metrics such as training loss, validation loss, and generated text quality with the baseline model.",
+        "Interestingness": 8,
+        "Feasibility": 7,
+        "Novelty": 8
+    },
+    {
+        "Name": "self_distillation",
+        "Title": "Self-Distillation: Iterative Self-Learning for Enhanced Language Model Training",
+        "Experiment": "Modify the training loop to include a self-distillation phase. Periodically, generate predictions from the current model and use these predictions as additional training data. Implement a new function to handle the generation and processing of self-distillation data. Compare the training dynamics, convergence speed, and final performance with the baseline model.",
+        "Interestingness": 9,
+        "Feasibility": 7,
+        "Novelty": 8
+    },
+    {
+        "Name": "selective_forgetting",
+        "Title": "Selective Forgetting: Dynamic Parameter Resetting for Improved Generalization in Language Models",
+        "Experiment": "Modify the training loop to periodically apply a selective forgetting mask to a small proportion of randomly selected model parameters. This mask will be applied non-deterministically, based on the training progress and the current state of the model. Implement a new function to create and apply the selective forgetting mask. Monitor the impact of selective forgetting during training to adjust its application dynamically if needed. Compare the training dynamics, convergence speed, and final performance with the baseline model by evaluating metrics such as training loss, validation loss, and generated text quality.",
+        "Interestingness": 9,
+        "Feasibility": 7,
+        "Novelty": 8
+    },
+    {
+        "Name": "memory_augmented_transformer",
+        "Title": "Memory-Augmented Transformer: Enhancing Long-Range Dependencies in Language Models",
+        "Experiment": "Integrate a simpler memory network as an external memory module into the existing GPT architecture. Modify the forward pass to include memory read/write operations, and adjust the loss calculation accordingly. Train and evaluate the model on the provided dataset, comparing metrics such as training loss, validation loss, and generated text quality with the baseline model. Specifically, assess improvements in generating coherent and contextually accurate text over longer sequences.",
+        "Interestingness": 9,
+        "Feasibility": 7,
+        "Novelty": 8
+    },
+    {
+        "Name": "efficient_long_range_attention",
+        "Title": "Efficient Long-Range Attention: Enhancing Transformer Models for Improved Long-Range Dependency Capture",
+        "Experiment": "Implement a 'Long-Range Attention' module within the existing transformer architecture. This module will introduce a fixed number of memory tokens that summarize past information and are periodically updated. Modify the existing CausalSelfAttention class to include this new mechanism. Train and evaluate the model on the provided dataset, comparing metrics such as training loss, validation loss, and generated text quality with the baseline model. Specifically, assess improvements in capturing long-range dependencies and generating coherent and contextually accurate text over longer sequences.",
+        "Interestingness": 9,
+        "Feasibility": 7,
+        "Novelty": 9
+    },
+    {
+        "Name": "progressive_neural_network",
+        "Title": "Progressive Neural Networks: Incremental Layer Freezing and Unfreezing for Enhanced Transformer Training",
+        "Experiment": "Modify the training loop to progressively freeze and unfreeze layers of the model. Initially, only the first few layers are trainable, with subsequent layers being frozen. As training progresses, periodically unfreeze additional layers based on a predefined schedule or validation loss improvements. Implement a function to manage which layers are trainable based on the current iteration and validation performance. Compare the training dynamics, convergence speed, and final performance with the baseline model by evaluating metrics such as training loss, validation loss, and generated text quality.",
+        "Interestingness": 8,
+        "Feasibility": 7,
+        "Novelty": 7
+    },
+    {
+        "Name": "contrastive_self_supervised",
+        "Title": "Contrastive Learning with Self-Supervised Pretext Tasks: Enhancing Language Model Representations",
+        "Experiment": "Implement a contrastive learning objective as an auxiliary task. Create pairs of similar and dissimilar text sequences using pretext tasks like shuffling words within a sentence, masking certain words, or using augmented text sequences. Add a contrastive loss function to the existing model that brings similar pairs closer in the representation space and pushes dissimilar pairs apart. Modify the forward pass to compute logits for both the main language modeling task and the contrastive task. Combine the losses and update the model's parameters. Compare the performance of the model with and without the contrastive learning objective by evaluating metrics such as training loss, validation loss, and generated text quality.",
+        "Interestingness": 9,
+        "Feasibility": 7,
+        "Novelty": 8
+    },
+    {
+        "Name": "reward_based_training_adjustment",
+        "Title": "Reward-Based Training Adjustment: Enhancing Language Model Training with Coherence Feedback",
+        "Experiment": "Integrate a reward mechanism into the existing training loop that evaluates the coherence of generated sequences. Define a simple reward function based on coherence metrics. Modify the training loop to adjust the loss function based on the received reward. Compare the training dynamics, convergence speed, and final performance with the baseline model by evaluating metrics such as training loss, validation loss, and generated text quality.",
+        "Interestingness": 9,
+        "Feasibility": 8,
+        "Novelty": 8
+    },
+    {
+        "Name": "graph_preprocessed_transformer",
+        "Title": "Graph-Preprocessed Transformer: Enhancing Language Models with Graph-Based Embedding Augmentation",
+        "Experiment": "Introduce a preprocessing step to convert text data into a graph structure. Use a Graph Neural Network (GNN) to process this graph and produce augmented embeddings. Feed these augmented embeddings into the existing transformer model. Compare the training dynamics, convergence speed, and final performance with the baseline model.",
+        "Interestingness": 8,
+        "Feasibility": 7,
+        "Novelty": 8
+    },
+    {
+        "Name": "simplified_meta_learning",
+        "Title": "Simplified Meta-Learning: Enhancing Language Model Adaptability and Generalization",
+        "Experiment": "Modify the training loop to incorporate a simplified version of the Model-Agnostic Meta-Learning (MAML) algorithm. Implement inner and outer loops within the training process. The inner loop involves fine-tuning the model on a small batch of data, while the outer loop updates the model parameters based on the performance of the fine-tuned model. Compare the training dynamics, convergence speed, and final performance with the baseline model by evaluating metrics such as training loss, validation loss, and generated text quality.",
+        "Interestingness": 10,
+        "Feasibility": 8,
+        "Novelty": 9
+    },
+    {
+        "Name": "rl_based_training",
+        "Title": "Reinforcement Learning-Based Training: Enhancing Language Models with Long-Term Reward Optimization",
+        "Experiment": "Integrate a reinforcement learning agent into the training loop. Define a simple reward function based on metrics like perplexity. Modify the training loop to incorporate RL agent feedback at the end of each epoch. Update the model's parameters by augmenting the loss function with the reward signal. Compare the training dynamics, convergence speed, and final performance with the baseline model by evaluating metrics such as training loss, validation loss, and generated text quality.",
+        "Interestingness": 10,
+        "Feasibility": 8,
+        "Novelty": 9
+    },
+    {
+        "Name": "local_global_attention",
+        "Title": "Local-Global Attention: Balancing Short-Range and Long-Range Dependencies in Transformers",
+        "Experiment": "Introduce two types of attention heads: local and global. Local heads focus on a fixed window around each token, while global heads attend to the entire sequence. Modify the CausalSelfAttention class to include both types of heads and adjust the forward pass accordingly. Introduce a hyperparameter to control the proportion of local vs. global heads. Specifically, add logic in CausalSelfAttention to split the heads into local and global groups, and adjust the attention computation for local heads to only consider a fixed window of tokens. Train and evaluate the model with various configurations, comparing metrics such as training loss, validation loss, and generated text quality with the baseline model.",
+        "Interestingness": 9,
+        "Feasibility": 7,
+        "Novelty": 9
+    },
+    {
+        "Name": "hierarchical_attention",
+        "Title": "Hierarchical Attention: Multi-Level Context Understanding in Transformer Models",
+        "Experiment": "Modify the CausalSelfAttention class to include three levels of attention: tokens, phrases, and sentences. Adjust the forward pass to compute attention at each level separately and combine the outputs, either by concatenation or averaging, before passing them to the next layer. Update the training loop to incorporate the new hierarchical attention mechanism. Compare the training dynamics, convergence speed, and final performance with the baseline model by evaluating metrics such as training loss, validation loss, and generated text quality.",
+        "Interestingness": 10,
+        "Feasibility": 7,
+        "Novelty": 9
+    },
+    {
+        "Name": "external_memory_gpt",
+        "Title": "External Memory-Augmented GPT: Enhancing Long-Range Dependency Handling in Language Models",
+        "Experiment": "Integrate an external memory module into the existing GPT architecture. Modify the forward pass to include memory read/write operations, and adjust the loss calculation accordingly. Specifically, add a memory matrix to the model that can be read from and written to at each time step. Modify the GPT class to include methods for interacting with this memory. Implement a new function to initialize the memory and handle the read/write operations, ensuring training stability by employing gradient clipping and regularization techniques. Train and evaluate the model on the provided dataset, comparing metrics such as training loss, validation loss, and generated text quality with the baseline model. Specifically, assess improvements in generating coherent and contextually accurate text over longer sequences.",
+        "Interestingness": 10,
+        "Feasibility": 6,
+        "Novelty": 9
+    },
+    {
+        "Name": "contrastive_regularization",
+        "Title": "Contrastive Regularization: Enhancing Language Model Robustness and Generalization",
+        "Experiment": "Implement a contrastive loss alongside the standard cross-entropy loss. Generate pairs of similar and dissimilar sequences from the training data. Add a new function to create positive and negative pairs. Modify the forward pass to compute both the standard loss and the contrastive loss. Combine the losses by weighting them appropriately. Train the model using the combined loss and compare the performance metrics such as training loss, validation loss, and generated text quality with the baseline model.",
+        "Interestingness": 8,
+        "Feasibility": 7,
+        "Novelty": 8
+    },
+    {
+        "Name": "scheduled_attention_span",
+        "Title": "Scheduled Attention Span: Predefined Context Window Adjustment for Efficient Training",
+        "Experiment": "Modify the model to adjust its block size based on a predefined schedule during training. Implement a new function to handle block size adjustments at specific training milestones. Update the forward pass to accommodate the scheduled block size changes. Compare the training dynamics, convergence speed, and final performance with the baseline model.",
+        "Interestingness": 7,
+        "Feasibility": 8,
+        "Novelty": 7
+    },
+    {
+        "Name": "knowledge_augmented_transformer",
+        "Title": "Knowledge-Augmented Transformer: Enhancing Language Models with External Knowledge Integration",
+        "Experiment": "Modify the model to incorporate external knowledge embeddings during training and generation. Use a pre-built knowledge base and implement a function to fetch relevant knowledge snippets based on the input context. Concatenate these knowledge embeddings with the token embeddings before feeding them into the transformer layers. Train and evaluate the modified model on the existing dataset, comparing metrics such as training loss, validation loss, coherence, factual accuracy, and fluency of generated text with the baseline model.",
+        "Interestingness": 10,
+        "Feasibility": 8,
+        "Novelty": 9
+    },
+    {
+        "Name": "data_augmentation_char",
+        "Title": "Data Augmentation for Character-Level Language Models: Enhancing Generalization Through Input Variability",
+        "Experiment": "Implement data augmentation techniques for character-level text data. Modify the get_batch function to include various augmentation methods such as: 1) Character shuffling within words (excluding the first and last characters to retain readability), 2) Random insertion/deletion of characters with a certain probability, and 3) Synonym replacement for words (using a simple predefined lookup table). Compare the training dynamics, convergence speed, and final performance of the model trained with augmented data against the baseline model. Evaluate using metrics such as training loss, validation loss, and quality of generated text measured by coherence and diversity.",
+        "Interestingness": 8,
+        "Feasibility": 9,
+        "Novelty": 8
+    },
+    {
+        "Name": "entity_recognition_auxiliary",
+        "Title": "Entity Recognition Auxiliary Task: Enhancing Language Model Context Understanding",
+        "Experiment": "Modify the model to include an additional output layer for entity recognition. Implement a combined loss function that incorporates both the original text generation task loss and the new entity recognition task loss. Update the forward pass to compute logits for both tasks. The entity recognition task will involve tagging entities within the input text. Train the model using the combined loss and compare the performance metrics such as training loss, validation loss, and generated text quality with the baseline model.",
+        "Interestingness": 9,
+        "Feasibility": 8,
+        "Novelty": 9
+    },
+    {
+        "Name": "dual_context_transformer",
+        "Title": "Dual-Context Transformer: Enhancing Language Models with Combined Character and Word-Level Embeddings",
+        "Experiment": "Modify the model to include two separate embedding layers: one for characters and one for words. Define a tokenizer for word-level embeddings. During training, process the input text at both levels and combine these embeddings (e.g., by concatenation or averaging) before feeding them into the transformer layers. Update the forward pass to handle the combined embeddings and adjust the loss computation to account for both character and word-level contexts. Compare the performance of the model with and without dual-context embeddings by evaluating metrics such as training loss, validation loss, and generated text quality.",
+        "Interestingness": 9,
+        "Feasibility": 7,
+        "Novelty": 9
+    },
+    {
+        "Name": "contextual_embedding_integration",
+        "Title": "Contextual Embedding Integration: Enhancing Transformer Models with Dynamic Contextual Information",
+        "Experiment": "Modify the model to accept additional contextual embeddings alongside the token embeddings. Implement a function to dynamically extract contextual embeddings from preceding text snippets within the dataset using a sliding window approach. Update the get_batch function to include this context extraction, and update the forward pass to concatenate these contextual embeddings with the token embeddings before feeding them into the transformer layers. Train and evaluate the modified model on the provided dataset, comparing metrics such as training loss, validation loss, and generated text quality (measured by coherence and diversity) with the baseline model.",
+        "Interestingness": 9,
+        "Feasibility": 7,
+        "Novelty": 8
+    },
+    {
+        "Name": "masked_character_modeling",
+        "Title": "Masked Character Modeling: Enhancing Language Model Training with Self-Supervised Pre-training",
+        "Experiment": "Modify the dataset loading and batch generation to include masked characters, where a certain percentage of characters in each input sequence are replaced with a special [MASK] token. Adjust the model's forward pass to predict these masked characters during a self-supervised pre-training phase. After pre-training, fine-tune the model on the original text generation task. Compare performance metrics such as training loss, validation loss, and generated text quality with the baseline model. This involves modifying the get_batch function to create masked versions of sequences, updating the forward method to handle masked character prediction, and ensuring the pre-training phase transitions smoothly into fine-tuning.",
+        "Interestingness": 9,
+        "Feasibility": 8,
+        "Novelty": 9
+    },
+    {
+        "Name": "intermittent_human_feedback",
+        "Title": "Intermittent Human Feedback: Enhancing Language Models with Periodic Human Evaluation",
+        "Experiment": "Modify the training loop to include periodic checkpoints for human evaluation. Implement a feedback mechanism where a human evaluator can rate generated text or provide corrections at these checkpoints. Use this feedback to adjust the model's parameters before resuming training. Specifically, add a function to collect and process human feedback at fixed intervals, and integrate this feedback into the loss function or optimizer. Compare the training dynamics, convergence speed, and final performance with the baseline model by evaluating metrics such as training loss, validation loss, and generated text quality.",
+        "Interestingness": 10,
+        "Feasibility": 7,
+        "Novelty": 10
+    },
+    {
+        "Name": "hebbian_initialization",
+        "Title": "Hebbian Initialization: Exploring Biologically Inspired Weight Initialization for Language Models",
+        "Experiment": "Implement a Hebbian-inspired weight initialization function that initializes weights based on the frequency of co-occurrence of input tokens. Modify the GPT class's _init_weights method to use this new function. Specifically, adjust the _init_weights method to initialize weights using a Hebbian-like rule, where weights are stronger for tokens that frequently appear together in the training data. Compare the training dynamics, convergence speed, and final performance metrics with the baseline model using the existing training loop. Evaluate metrics such as training loss, validation loss, and generated text quality.",
+        "Interestingness": 9,
+        "Feasibility": 8,
+        "Novelty": 9
+    },
+    {
+        "Name": "attention_head_pruning",
+        "Title": "Attention Head Pruning: Dynamic Optimization of Transformer Models",
+        "Experiment": "Modify the CausalSelfAttention class to include a mechanism for monitoring the contribution of each attention head by measuring the gradient magnitudes during backpropagation. Implement a pruning function that periodically removes the least important heads with the lowest gradient magnitudes. Update the training loop to incorporate periodic pruning steps and adjust the model architecture dynamically. Compare the training dynamics, convergence speed, and final performance metrics such as training loss, validation loss, and generated text quality with the baseline model.",
+        "Interestingness": 9,
+        "Feasibility": 7,
+        "Novelty": 9
+    },
+    {
+        "Name": "meta_learning_hyperparam_adjustment",
+        "Title": "Meta-Learning for Dynamic Hyperparameter Adjustment: Enhancing Training Efficiency and Generalization",
+        "Experiment": "Introduce a meta-learning loop that dynamically adjusts hyperparameters during training. Implement a meta-controller that monitors training and validation losses every 100 iterations and adjusts learning rates, dropout rates, and other hyperparameters based on these metrics. The meta-controller will increment or decrement the learning rate by a factor of 1.1 and adjust the dropout rate by 0.05 based on performance improvements or degradations. Update the training loop to periodically invoke the meta-controller and apply the recommended hyperparameter adjustments. Compare the training dynamics, convergence speed, and final performance with the baseline model, evaluating metrics such as training loss, validation loss, and generated text quality.",
+        "Interestingness": 10,
+        "Feasibility": 7,
+        "Novelty": 10
+    },
+    {
+        "Name": "temporal_curriculum_learning",
+        "Title": "Temporal Curriculum Learning: Leveraging Temporal Data Phases for Enhanced Training",
+        "Experiment": "Implement a curriculum learning approach by splitting the training data into phases with increasing complexity. Define complexity based on the variance in character sequences or the introduction of rarer characters over time. Modify the get_batch function to handle different phases of the dataset. Update the training loop to progress through these phases sequentially, adjusting the difficulty of the training data over time. Compare the training dynamics, convergence speed, and final performance with the baseline model.",
+        "Interestingness": 9,
+        "Feasibility": 8,
+        "Novelty": 9
+    },
+    {
+        "Name": "adversarial_training",
+        "Title": "Adversarial Training: Enhancing Robustness and Generalization in Language Models",
+        "Experiment": "Integrate adversarial training into the existing training loop. Implement a function to generate adversarial examples using the Fast Gradient Sign Method (FGSM). Specifically, after computing the original loss, use the gradients to create adversarial examples by adding small perturbations to the input. Compute an additional loss term using these adversarial examples. Modify the training loop to include this additional loss term in the backpropagation step. Compare the training dynamics, convergence speed, robustness to adversarial examples, and generalization performance with the baseline model by evaluating metrics such as training loss, validation loss, and generated text quality.",
+        "Interestingness": 10,
+        "Feasibility": 7,
+        "Novelty": 9
+    }
+]

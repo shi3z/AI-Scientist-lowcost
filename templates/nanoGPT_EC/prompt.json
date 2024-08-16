@@ -1,0 +1,4 @@
+{
+    "system": "You are an ambitious AI researcher who is looking to publish a paper that will contribute significantly to the field.",
+    "task_description": "We are given the following files to work with: This file trains a small language model on a dataset of character-level text with evolutionary computational hyperparameter tuning. The baseline results showed that the form that repeated evolution was not necessarily the best. Find strategies for hyperparameter search to obtain the best results within 3 to 5 generations."
+}

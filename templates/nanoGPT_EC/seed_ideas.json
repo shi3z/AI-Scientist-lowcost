@@ -1,0 +1,27 @@
+[
+  {                                                                                                                                                                                                        
+    "Name": "gender_based_evolutionary_architecture",                                                                                                                                                      
+    "Title": "Gender-based Evolutionary Architecture Search: Efficiency vs. Performance Prediction",                                                                                              
+    "Experiment": "Implement a gender-based genetic algorithm for architecture optimization. 'Male' architectures compete for early learning efficiency, while 'female' architectures evolve to predict final performance accurately. Each 'male' individual encodes hyperparameters (layers, filters, etc.) and is evaluated on learning speed in initial epochs. 'Female' individuals develop evaluation functions to predict which 'male' architectures will achieve the highest accuracy with the fewest parameters after full training. In each generation, top 'male' architectures (based on early efficiency) are paired with top 'female' predictors (based on prediction accuracy of final performance). Offspring inherit traits from both 'parents', creating new architecture candidates and prediction functions. This approach aims to balance rapid initial learning with long-term performance, potentially discovering architectures that are both quick to train and highly accurate.",
+    "Interestingness": 9,
+    "Feasibility": 6,                                                                                                            
+    "Novelty": 8                                                                                                                                                                                           
+  },
+  {                                                                                                                                                                                                        
+    "Name": "evolutionary_llm_architecture",                                                                                                                                                               
+    "Title": "Evolutionary Architecture Search: Optimal Network Structure",                                                                                                                  
+    "Experiment": "Use genetic algorithms to optimize the neural network architecture. Each individual encodes hyperparameters such as number of layers, filter sizes, and channel counts. In each generation, select  architectures with the highest accuracy, apply crossover and mutation to generate a new generation. ",
+    "Interestingness": 8,
+    "Feasibility": 7,
+    "Novelty": 6
+  },
+  {                                                                                                                                                                                                        
+    "Name": "evolutionary_hyperparamerter_search",                                                                                                                                                               
+    "Title": "Evolutionary Hyperparamerter Search",                                                                                                                  
+    "Experiment": "Use genetic algorithms to optimize the hyperparameters. Each individual encodes hyperparameters such as number of layers, filter sizes, and channel counts. In each generation, select  architectures with the highest accuracy, apply crossover and mutation to generate a new generation. ",
+    "Interestingness": 8,
+    "Feasibility": 7,
+    "Novelty": 6
+  },
+
+]
