@@ -1,3 +1,11 @@
+"""
+Original:https://github.com/shi3z/AI-Scientist-lowcost/blob/main/templates/nanoGPT_lite/experiment.py
+Modified: 2024/8/16(JST)
+Modified by: shi3z (https://github.com/shi3z)
+
+NanoGPT for Evolutional Computation
+"""
+
 import os
 import time
 import math
@@ -11,7 +19,6 @@ import torch
 import torch.nn as nn
 from torch.nn import functional as F
 import argparse
-from genetic_algorithm import genetic_algorithm, Hyperparameters
 
 
 # --- BEGIN model.py ---
@@ -314,316 +321,367 @@ class GPT(nn.Module):
 
 
 # --- END model.py ---
-def train(hyperparameters, dataset="shakespeare_char", out_dir="run_0", seed_offset=0):
-    # -----------------------------------------------------------------------------
-    # default config values designed to train a gpt2 (124M) on OpenWebText
-    # data
-    gradient_accumulation_steps = 1
-    batch_size = 64 if dataset == "shakespeare_char" else 32
-    block_size = 256  # context of up to 256 previous characters
-    # I/O
-    eval_interval = 250 if dataset == "shakespeare_char" else 1000
-    log_interval = 10 if dataset == "shakespeare_char" else 100
-    eval_iters = 200
-    eval_only = False  # if True, script exits right after the first eval
-    always_save_checkpoint = False  # we expect to overfit on this small dataset, so only save when val improves
-    never_save_checkpoint = True  # never save checkpoints
-    # model
-    n_layer = hyperparameters.n_layer
-    n_head = hyperparameters.n_head
-    n_embd = hyperparameters.n_embd
-    dropout = hyperparameters.dropout
-    bias = hyperparameters.bias
-    # adamw optimizer
-    learning_rate = 1e-3 if dataset == "shakespeare_char" else 5e-4
-    max_iters = 5000 if dataset == "shakespeare_char" else 100000
-    weight_decay = 1e-1
-    beta1 = 0.9
-    beta2 = 0.99  # make a bit bigger because number of tokens per iter is small
-    grad_clip = 1.0  # clip gradients at this value, or disable if == 0.0
-    # learning rate decay settings
-    decay_lr = True  # whether to decay the learning rate
-    warmup_iters = 100 if dataset == "shakespeare_char" else 200
-    lr_decay_iters = max_iters  # make equal to max_iters usually
-    min_lr = 1e-4 if dataset == "shakespeare_char" else 5e-5
-    # DDP settings
-    backend = "nccl"  # 'nccl', 'gloo', etc.
-    # system
-    device = "cuda"  # Always use CUDA
-    dtype = (
-        "bfloat16"
-        if torch.cuda.is_available() and torch.cuda.is_bf16_supported()
-        else "float16"
-    )  # 'float32', 'bfloat16', or 'float16', the latter will auto implement a GradScaler
-    compile = True  # do not torch compile the model on macbooks
+def train(dataset="shakespeare_char", out_dir="run_0", seed_offset=0):
+    # Genetic data initialization
+    num_of_genes=8
+    num_of_genetic_factors=9
+    num_of_generations=3
 
-    # various inits, derived attributes, I/O setup
-    # if not ddp, we are running on a single gpu, and one process
-    master_process = True
-    tokens_per_iter = gradient_accumulation_steps * batch_size * block_size
-    print(f"tokens per iteration will be: {tokens_per_iter:,}")
-
-    if master_process:
-        os.makedirs(out_dir, exist_ok=True)
-    torch.manual_seed(1337 + seed_offset)
-    torch.backends.cuda.matmul.allow_tf32 = True  # allow tf32 on matmul
-    torch.backends.cudnn.allow_tf32 = True  # allow tf32 on cudnn
-    device_type = (
-        "cuda" if "cuda" in device else "cpu"
-    )  # for later use in torch.autocast
-    # note: float16 data type will automatically use a GradScaler
-    ptdtype = {
-        "float32": torch.float32,
-        "bfloat16": torch.bfloat16,
-        "float16": torch.float16,
-    }[dtype]
-    ctx = (
-        nullcontext()
-        if device_type == "cpu"
-        else torch.amp.autocast(device_type=device_type, dtype=ptdtype)
-    )
-
-    # poor man's data loader
-    data_dir = os.path.join("/mnt/raid6/git/AI-Scientist-lowcost/data", dataset)
-    #data_dir = os.path.join("data", dataset)
-
-    # data_dir = os.path.join("../../../data", dataset)
-
-    def get_batch(split):
-        # We recreate np.memmap every batch to avoid a memory leak, as per
-        # https://stackoverflow.com/questions/45132940/numpy-memmap-memory-usage-want-to-iterate-once/61472122#61472122
-        if split == "train":
-            data = np.memmap(
-                os.path.join(data_dir, "train.bin"), dtype=np.uint16, mode="r"
-            )
-        else:
-            data = np.memmap(
-                os.path.join(data_dir, "val.bin"), dtype=np.uint16, mode="r"
-            )
-        ix = torch.randint(len(data) - block_size, (batch_size,))
-        x = torch.stack(
-            [torch.from_numpy((data[i : i + block_size]).astype(np.int64)) for i in ix]
-        )
-        y = torch.stack(
-            [
-                torch.from_numpy((data[i + 1 : i + 1 + block_size]).astype(np.int64))
-                for i in ix
-            ]
-        )
-        if device_type == "cuda":
-            # pin arrays x,y, which allows us to move them to GPU asynchronously (non_blocking=True)
-            x, y = x.pin_memory().to(device, non_blocking=True), y.pin_memory().to(
-                device, non_blocking=True
-            )
-        else:
-            x, y = x.to(device), y.to(device)
-        return x, y
-
-    iter_num = 0
-    best_val_loss = 1e9
-
-    # attempt to derive vocab_size from the dataset
-    meta_path = os.path.join(data_dir, "meta.pkl")
-    meta_vocab_size = None
-    if os.path.exists(meta_path):
-        with open(meta_path, "rb") as f:
-            meta = pickle.load(f)
-        meta_vocab_size = meta["vocab_size"]
-        print(f"found vocab_size = {meta_vocab_size} (inside {meta_path})")
-
-    return final_info, train_log_info, val_log_info
-
-def main():
-    parser = argparse.ArgumentParser(description="Run experiment")
-    parser.add_argument("--out_dir", type=str, default="run_0", help="Output directory")
-    args = parser.parse_args()
-
-    if __name__ == "__main__":
-        num_seeds = {
-            "shakespeare_char": 1,
-        }
-
-        out_dir = args.out_dir
-        all_results = {}
-        final_infos = {}
-        config = {
-            'max_layers': 12,
-            'max_heads': 12,
-            'min_embd': 128,
-            'max_embd': 768,
-            'max_dropout': 0.5
-        }
-        for dataset in num_seeds.keys():
-            final_info_list = []
-            best_hyperparameters = genetic_algorithm(config, train, generations=10, pop_size=20, num_parents=10)
-            for seed_offset in range(num_seeds[dataset]):
-                final_info, train_info, val_info = train(best_hyperparameters, dataset, out_dir, seed_offset)
-                all_results[f"{dataset}_{seed_offset}_final_info"] = final_info
-                all_results[f"{dataset}_{seed_offset}_train_info"] = train_info
-                all_results[f"{dataset}_{seed_offset}_val_info"] = val_info
-                final_info_list.append(final_info)
-            final_info_dict = {
-                k: [d[k] for d in final_info_list] for k in final_info_list[0].keys()
-            }
-            means = {f"{k}_mean": np.mean(v) for k, v in final_info_dict.items()}
-            stderrs = {
-                f"{k}_stderr": np.std(v) / len(v) for k, v in final_info_dict.items()
-            }
-            final_infos[dataset] = {
-                "means": means,
-                "stderrs": stderrs,
-                "final_info_dict": final_info_dict,
-            }
-
-        with open(os.path.join(out_dir, "final_info.json"), "w") as f:
-            json.dump(final_infos, f)
-
-        with open(os.path.join(out_dir, "all_results.npy"), "wb") as f:
-            np.save(f, all_results)
-
-if __name__ == "__main__":
-    main()
-
-    # initialize a GradScaler. If enabled=False scaler is a no-op
-    scaler = torch.cuda.amp.GradScaler(enabled=(dtype == "float16"))
-
-    # optimizer
-    optimizer = model.configure_optimizers(
-        weight_decay, learning_rate, (beta1, beta2), device_type
-    )
-    checkpoint = None  # free up memory
-
-    # compile the model
-    if compile:
-        print("compiling the model... (takes a ~minute)")
-        unoptimized_model = model
-        model = torch.compile(model)  # requires PyTorch 2.0
-
-    # helps estimate an arbitrarily accurate loss over either split using many batches
-    @torch.no_grad()
-    def estimate_loss():
-        out = {}
-        model.eval()
-        for split in ["train", "val"]:
-            losses = torch.zeros(eval_iters)
-            for k in range(eval_iters):
-                X, Y = get_batch(split)
-                with ctx:
-                    logits, loss = model(X, Y)
-                losses[k] = loss.item()
-            out[split] = losses.mean()
-        model.train()
-        return out
-
-    # learning rate decay scheduler (cosine with warmup)
-    def get_lr(it):
-        # 1) linear warmup for warmup_iters steps
-        if it < warmup_iters:
-            return learning_rate * it / warmup_iters
-        # 2) if it > lr_decay_iters, return min learning rate
-        if it > lr_decay_iters:
-            return min_lr
-        # 3) in between, use cosine decay down to min learning rate
-        decay_ratio = (it - warmup_iters) / (lr_decay_iters - warmup_iters)
-        assert 0 <= decay_ratio <= 1
-        coeff = 0.5 * (1.0 + math.cos(math.pi * decay_ratio))  # coeff ranges 0..1
-        return min_lr + coeff * (learning_rate - min_lr)
-
+    genes = np.random.rand(num_of_genes,num_of_genetic_factors)
     # logging
     val_log_info = []
     train_log_info = []
 
-    # training loop
-    X, Y = get_batch("train")  # fetch the very first batch
-    og_t0 = time.time()
-    t0 = time.time()
-    local_iter_num = 0  # number of iterations in the lifetime of this process
-    raw_model = model
-    while True:
+    for generation in range(num_of_generations):
+        print(f"=== Generation {generation} ====")
+        print(genes)
 
-        # determine and set the learning rate for this iteration
-        lr = get_lr(iter_num) if decay_lr else learning_rate
-        for param_group in optimizer.param_groups:
-            param_group["lr"] = lr
+        for gene_id in range(num_of_genes):
 
-        # evaluate the loss on train/val sets and write checkpoints
-        if iter_num % eval_interval == 0 and master_process:
-            losses = estimate_loss()
-            print(
-                f"step {iter_num}: train loss {losses['train']:.4f}, val loss {losses['val']:.4f}"
+            # -----------------------------------------------------------------------------
+            # default config values designed to train a gpt2 (124M) on OpenWebText
+            # data
+            gradient_accumulation_steps = 1
+            batch_size = 64 if dataset == "shakespeare_char" else 32
+            block_size = 256  # context of up to 256 previous characters
+            # I/O
+            eval_interval = 250 if dataset == "shakespeare_char" else 1000
+            log_interval = 10 if dataset == "shakespeare_char" else 100
+            eval_iters = 200
+            eval_only = False  # if True, script exits right after the first eval
+            always_save_checkpoint = False  # we expect to overfit on this small dataset, so only save when val improves
+            never_save_checkpoint = True  # never save checkpoints
+            # model
+            n_layer = 6  # baby GPT model :)
+            n_head = 6
+            n_embd = 384
+            dropout = 0.2  # for pretraining 0 is good, for finetuning try 0.1+
+            bias = False  # do we use bias inside LayerNorm and Linear layers?
+            # adamw optimizer
+            learning_rate = 1e-3 if dataset == "shakespeare_char" else 5e-4
+            max_iters = 5000 if dataset == "shakespeare_char" else 100000
+            weight_decay = 1e-1
+            beta1 = 0.9
+            beta2 = 0.99  # make a bit bigger because number of tokens per iter is small
+            grad_clip = 1.0  # clip gradients at this value, or disable if == 0.0
+            # learning rate decay settings
+            decay_lr = True  # whether to decay the learning rate
+            warmup_iters = 100 if dataset == "shakespeare_char" else 200
+            lr_decay_iters = max_iters  # make equal to max_iters usually
+            min_lr = 1e-4 if dataset == "shakespeare_char" else 5e-5
+
+            # Apply genetic factor
+            n_layer  = int(n_layer * genes[gene_id][1]*4)
+            n_head  = int(n_head * genes[gene_id][2]*5)+4
+            n_embd = (384 // n_head) * n_head #Adjust n_embd
+            dropout  = dropout * genes[gene_id][3]
+            learning_rate  = learning_rate * genes[gene_id][4]
+            beta1  = beta1 - genes[gene_id][5]/10.0
+            beta2  = beta2 - genes[gene_id][6]/100.0
+            warmup_iters  = int(warmup_iters * genes[gene_id][7]*2)
+
+            #Show applied params
+            print(f"n_layer={n_layer}, n_head={n_head}, dropout={dropout:.2f}, learning_rate={learning_rate:.2e}, beta1={beta1:.2f}, beta2={beta2:.2f}, warmup_iters={warmup_iters}")
+
+
+            # DDP settings
+            backend = "nccl"  # 'nccl', 'gloo', etc.
+            # system
+            device = "cuda"  # Always use CUDA
+            dtype = (
+                "bfloat16"
+                if torch.cuda.is_available() and torch.cuda.is_bf16_supported()
+                else "float16"
+            )  # 'float32', 'bfloat16', or 'float16', the latter will auto implement a GradScaler
+            compile = True  # do not torch compile the model on macbooks
+
+            # various inits, derived attributes, I/O setup
+            # if not ddp, we are running on a single gpu, and one process
+            master_process = True
+            tokens_per_iter = gradient_accumulation_steps * batch_size * block_size
+            print(f"tokens per iteration will be: {tokens_per_iter:,}")
+
+            if master_process:
+                os.makedirs(out_dir, exist_ok=True)
+            torch.manual_seed(1337 + seed_offset)
+            torch.backends.cuda.matmul.allow_tf32 = True  # allow tf32 on matmul
+            torch.backends.cudnn.allow_tf32 = True  # allow tf32 on cudnn
+            device_type = (
+                "cuda" if "cuda" in device else "cpu"
+            )  # for later use in torch.autocast
+            # note: float16 data type will automatically use a GradScaler
+            ptdtype = {
+                "float32": torch.float32,
+                "bfloat16": torch.bfloat16,
+                "float16": torch.float16,
+            }[dtype]
+            ctx = (
+                nullcontext()
+                if device_type == "cpu"
+                else torch.amp.autocast(device_type=device_type, dtype=ptdtype)
             )
-            val_log_info.append(
-                {
-                    "iter": iter_num,
-                    "train/loss": losses["train"].item(),
-                    "val/loss": losses["val"].item(),
-                    "lr": lr,
-                }
+
+            # poor man's data loader
+            #data_dir = os.path.join("../../data", dataset)
+            data_dir = os.path.join("../../data", dataset)
+
+            # data_dir = os.path.join("../../../data", dataset)
+
+            def get_batch(split):
+                # We recreate np.memmap every batch to avoid a memory leak, as per
+                # https://stackoverflow.com/questions/45132940/numpy-memmap-memory-usage-want-to-iterate-once/61472122#61472122
+                if split == "train":
+                    data = np.memmap(
+                        os.path.join(data_dir, "train.bin"), dtype=np.uint16, mode="r"
+                    )
+                else:
+                    data = np.memmap(
+                        os.path.join(data_dir, "val.bin"), dtype=np.uint16, mode="r"
+                    )
+                ix = torch.randint(len(data) - block_size, (batch_size,))
+                x = torch.stack(
+                    [torch.from_numpy((data[i : i + block_size]).astype(np.int64)) for i in ix]
+                )
+                y = torch.stack(
+                    [
+                        torch.from_numpy((data[i + 1 : i + 1 + block_size]).astype(np.int64))
+                        for i in ix
+                    ]
+                )
+                if device_type == "cuda":
+                    # pin arrays x,y, which allows us to move them to GPU asynchronously (non_blocking=True)
+                    x, y = x.pin_memory().to(device, non_blocking=True), y.pin_memory().to(
+                        device, non_blocking=True
+                    )
+                else:
+                    x, y = x.to(device), y.to(device)
+                return x, y
+
+            iter_num = 0
+            best_val_loss = 1e9
+
+            # attempt to derive vocab_size from the dataset
+            meta_path = os.path.join(data_dir, "meta.pkl")
+            meta_vocab_size = None
+            if os.path.exists(meta_path):
+                with open(meta_path, "rb") as f:
+                    meta = pickle.load(f)
+                meta_vocab_size = meta["vocab_size"]
+                print(f"found vocab_size = {meta_vocab_size} (inside {meta_path})")
+
+            # model init
+            model_args = dict(
+                n_layer=n_layer,
+                n_head=n_head,
+                n_embd=n_embd,
+                block_size=block_size,
+                bias=bias,
+                vocab_size=None,
+                dropout=dropout,
+            )  # start with model_args from command line
+            # init a new model from scratch
+            print("Initializing a new model from scratch")
+            # determine the vocab size we'll use for from-scratch training
+            if meta_vocab_size is None:
+                print(
+                    "defaulting to vocab_size of GPT-2 to 50304 (50257 rounded up for efficiency)"
+                )
+            model_args["vocab_size"] = meta_vocab_size if meta_vocab_size is not None else 50304
+            gptconf = GPTConfig(**model_args)
+            model = GPT(gptconf)
+            # crop down the model block size if desired, using model surgery
+            if block_size < model.config.block_size:
+                model.crop_block_size(block_size)
+                model_args["block_size"] = (
+                    block_size  # so that the checkpoint will have the right value
+                )
+            model.to(device)
+
+            # initialize a GradScaler. If enabled=False scaler is a no-op
+            scaler = torch.cuda.amp.GradScaler(enabled=(dtype == "float16"))
+
+            # optimizer
+            optimizer = model.configure_optimizers(
+                weight_decay, learning_rate, (beta1, beta2), device_type
             )
-            if losses["val"] < best_val_loss or always_save_checkpoint:
-                best_val_loss = losses["val"]
-                if iter_num > 0 and not never_save_checkpoint:
-                    checkpoint = {
-                        "model": raw_model.state_dict(),
-                        "optimizer": optimizer.state_dict(),
-                        "model_args": model_args,
-                        "iter_num": iter_num,
-                        "best_val_loss": best_val_loss,
-                    }
-                    print(f"saving checkpoint to {out_dir}")
-                    torch.save(checkpoint, os.path.join(out_dir, "ckpt.pt"))
-        if iter_num == 0 and eval_only:
-            break
+            checkpoint = None  # free up memory
 
-        # forward backward update, with optional gradient accumulation to simulate larger batch size
-        # and using the GradScaler if data type is float16
-        for micro_step in range(gradient_accumulation_steps):
-            with ctx:
-                logits, loss = model(X, Y)
-                loss = (
-                    loss / gradient_accumulation_steps
-                )  # scale the loss to account for gradient accumulation
-            # immediately async prefetch next batch while model is doing the forward pass on the GPU
-            X, Y = get_batch("train")
-            # backward pass, with gradient scaling if training in fp16
-            scaler.scale(loss).backward()
-        # clip the gradient
-        if grad_clip != 0.0:
-            scaler.unscale_(optimizer)
-            torch.nn.utils.clip_grad_norm_(model.parameters(), grad_clip)
-        # step the optimizer and scaler if training in fp16
-        scaler.step(optimizer)
-        scaler.update()
-        # flush the gradients as soon as we can, no need for this memory anymore
-        optimizer.zero_grad(set_to_none=True)
+            # compile the model
+            if compile:
+                print("compiling the model... (takes a ~minute)")
+                unoptimized_model = model
+                model = torch.compile(model)  # requires PyTorch 2.0
 
-        # timing and logging
-        t1 = time.time()
-        dt = t1 - t0
-        t0 = t1
-        if iter_num % log_interval == 0 and master_process:
-            # get loss as float. note: this is a CPU-GPU sync point
-            # scale up to undo the division above, approximating the true total loss (exact would have been a sum)
-            lossf = loss.item() * gradient_accumulation_steps
-            print(f"iter {iter_num}: loss {lossf:.4f}, time {dt*1000:.2f}ms")
-            train_log_info.append(
-                {
-                    "iter": iter_num,
-                    "loss": lossf,
-                    "time": dt * 1000,
-                }
-            )
-        iter_num += 1
-        local_iter_num += 1
+            # helps estimate an arbitrarily accurate loss over either split using many batches
+            @torch.no_grad()
+            def estimate_loss():
+                out = {}
+                model.eval()
+                for split in ["train", "val"]:
+                    losses = torch.zeros(eval_iters)
+                    for k in range(eval_iters):
+                        X, Y = get_batch(split)
+                        with ctx:
+                            logits, loss = model(X, Y)
+                        losses[k] = loss.item()
+                    out[split] = losses.mean()
+                model.train()
+                return out
 
-        # termination conditions
-        if iter_num > max_iters:
-            break
+            # learning rate decay scheduler (cosine with warmup)
+            def get_lr(it):
+                # 1) linear warmup for warmup_iters steps
+                if it < warmup_iters:
+                    return learning_rate * it / warmup_iters
+                # 2) if it > lr_decay_iters, return min learning rate
+                if it > lr_decay_iters:
+                    return min_lr
+                # 3) in between, use cosine decay down to min learning rate
+                decay_ratio = (it - warmup_iters) / (lr_decay_iters - warmup_iters)
+                assert 0 <= decay_ratio <= 1
+                coeff = 0.5 * (1.0 + math.cos(math.pi * decay_ratio))  # coeff ranges 0..1
+                return min_lr + coeff * (learning_rate - min_lr)
 
-    print("training done")
-    print(f"Best validation loss: {best_val_loss}")
-    print(f"Total train time: {(time.time() - og_t0) / 60:.2f} mins")
 
+            # training loop
+            X, Y = get_batch("train")  # fetch the very first batch
+            og_t0 = time.time()
+            t0 = time.time()
+            local_iter_num = 0  # number of iterations in the lifetime of this process
+            raw_model = model
+            while True:
+
+                # determine and set the learning rate for this iteration
+                lr = get_lr(iter_num) if decay_lr else learning_rate
+                for param_group in optimizer.param_groups:
+                    param_group["lr"] = lr
+
+                # evaluate the loss on train/val sets and write checkpoints
+                if iter_num % eval_interval == 0 and master_process:
+                    losses = estimate_loss()
+                    print(
+                        f"step {iter_num}: train loss {losses['train']:.4f}, val loss {losses['val']:.4f}"
+                    )
+                    val_log_info.append(
+                        {
+                            "generation":generation,
+                            "gene_id":gene_id,
+                            "iter": iter_num,
+                            "train/loss": losses["train"].item(),
+                            "val/loss": losses["val"].item(),
+                            "lr": lr,
+                        }
+                    )
+                    if losses["val"] < best_val_loss or always_save_checkpoint:
+                        best_val_loss = losses["val"]
+                        if iter_num > 0 and not never_save_checkpoint:
+                            checkpoint = {
+                                "model": raw_model.state_dict(),
+                                "optimizer": optimizer.state_dict(),
+                                "model_args": model_args,
+                                "iter_num": iter_num,
+                                "best_val_loss": best_val_loss,
+                            }
+                            print(f"saving checkpoint to {out_dir}")
+                            torch.save(checkpoint, os.path.join(out_dir, "ckpt.pt"))
+                if iter_num == 0 and eval_only:
+                    break
+
+                # forward backward update, with optional gradient accumulation to simulate larger batch size
+                # and using the GradScaler if data type is float16
+                for micro_step in range(gradient_accumulation_steps):
+                    with ctx:
+                        logits, loss = model(X, Y)
+                        loss = (
+                            loss / gradient_accumulation_steps
+                        )  # scale the loss to account for gradient accumulation
+                    # immediately async prefetch next batch while model is doing the forward pass on the GPU
+                    X, Y = get_batch("train")
+                    # backward pass, with gradient scaling if training in fp16
+                    scaler.scale(loss).backward()
+                # clip the gradient
+                if grad_clip != 0.0:
+                    scaler.unscale_(optimizer)
+                    torch.nn.utils.clip_grad_norm_(model.parameters(), grad_clip)
+                # step the optimizer and scaler if training in fp16
+                scaler.step(optimizer)
+                scaler.update()
+                # flush the gradients as soon as we can, no need for this memory anymore
+                optimizer.zero_grad(set_to_none=True)
+
+                # timing and logging
+                t1 = time.time()
+                dt = t1 - t0
+                t0 = t1
+                if iter_num % log_interval == 0 and master_process:
+                    # get loss as float. note: this is a CPU-GPU sync point
+                    # scale up to undo the division above, approximating the true total loss (exact would have been a sum)
+                    lossf = loss.item() * gradient_accumulation_steps
+                    print(f"iter {iter_num}: loss {lossf:.4f}, time {dt*1000:.2f}ms")
+                    train_log_info.append(
+                        {
+                            "iter": iter_num,
+                            "loss": lossf,
+                            "time": dt * 1000,
+                            "generation":generation,
+                            "gene_id":gene_id,
+                            "gene":genes[gene_id],
+                            "n_layer": n_layer,
+                            "n_head": n_head,
+                            "n_embd": n_embd,
+                            "dropout": dropout,
+                            "learning_rate": learning_rate,
+                            "beta1": beta1,
+                            "beta2": beta2,
+                            "warmup_iters": warmup_iters
+                            }
+                    )
+                iter_num += 1
+                local_iter_num += 1
+
+                # termination conditions
+                if iter_num > max_iters:
+                    break
+
+            print("training done")
+            print(f"Best validation loss: {best_val_loss}")
+            print(f"Total train time: {(time.time() - og_t0) / 60:.2f} mins")
+
+            # record best vall loss 
+            genes[gene_id][0] = best_val_loss #store to gene[0]
+
+        # Selection
+        print("=== Generation End")
+        print(genes)
+        indices = np.argsort(genes[:, 0])  
+        genes = genes[indices] 
+        print("=== Sorted")
+        print(genes)
+
+        # Crossover
+        num_genes = len(genes)
+        half_num_genes = num_genes // 2
+        new_genes=np.zeros((num_of_genes,num_of_genetic_factors))
+        for i in range(num_of_genes):
+            # pick two parents
+            idx1 = np.random.randint(0,half_num_genes)
+            idx2 = np.random.randint(0,half_num_genes)
+            # crossover gene
+            for j in range(1,num_of_genetic_factors):
+                if np.random.rand() > 0.5:
+                    new_genes[i][j] = genes[idx1][j]
+                else:
+                    new_genes[i][j] = genes[idx2][j]
+                # Mutation
+                if np.random.rand() < 0.15:
+                    new_genes[i][j] = np.random.rand() 
+        genes=new_genes
+                
+        print("=== Crossover and Muted")
+        print(genes)
+        
+
+        
     final_info = {
         "final_train_loss": lossf,
         "best_val_loss": best_val_loss.item(),
