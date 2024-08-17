@@ -323,9 +323,9 @@ class GPT(nn.Module):
 # --- END model.py ---
 def train(dataset="shakespeare_char", out_dir="run_0", seed_offset=0):
     # Genetic data initialization
-    num_of_genes=8
+    num_of_genes=10
     num_of_genetic_factors=9
-    num_of_generations=3
+    num_of_generations=5
 
     genes = np.random.rand(num_of_genes,num_of_genetic_factors)
     # logging
@@ -359,7 +359,7 @@ def train(dataset="shakespeare_char", out_dir="run_0", seed_offset=0):
             bias = False  # do we use bias inside LayerNorm and Linear layers?
             # adamw optimizer
             learning_rate = 1e-3 if dataset == "shakespeare_char" else 5e-4
-            max_iters = 5000 if dataset == "shakespeare_char" else 100000
+            max_iters = 500 if dataset == "shakespeare_char" else 100000
             weight_decay = 1e-1
             beta1 = 0.9
             beta2 = 0.99  # make a bit bigger because number of tokens per iter is small
@@ -559,9 +559,9 @@ def train(dataset="shakespeare_char", out_dir="run_0", seed_offset=0):
                 # evaluate the loss on train/val sets and write checkpoints
                 if iter_num % eval_interval == 0 and master_process:
                     losses = estimate_loss()
-                    print(
+                    """print(
                         f"step {iter_num}: train loss {losses['train']:.4f}, val loss {losses['val']:.4f}"
-                    )
+                    )"""
                     val_log_info.append(
                         {
                             "generation":generation,
@@ -617,7 +617,7 @@ def train(dataset="shakespeare_char", out_dir="run_0", seed_offset=0):
                     # get loss as float. note: this is a CPU-GPU sync point
                     # scale up to undo the division above, approximating the true total loss (exact would have been a sum)
                     lossf = loss.item() * gradient_accumulation_steps
-                    print(f"iter {iter_num}: loss {lossf:.4f}, time {dt*1000:.2f}ms")
+                    #print(f"iter {iter_num}: loss {lossf:.4f}, time {dt*1000:.2f}ms")
                     train_log_info.append(
                         {
                             "iter": iter_num,
@@ -673,7 +673,7 @@ def train(dataset="shakespeare_char", out_dir="run_0", seed_offset=0):
                 else:
                     new_genes[i][j] = genes[idx2][j]
                 # Mutation
-                if np.random.rand() < 0.15:
+                if np.random.rand() < 0.05: #mutation rate 10%
                     new_genes[i][j] = np.random.rand() 
         genes=new_genes
                 
@@ -733,11 +733,11 @@ def train(dataset="shakespeare_char", out_dir="run_0", seed_offset=0):
                 inference_time = end_time - start_time
                 tokens_per_second = max_new_tokens / inference_time
 
-                print(f"Sample {k+1}:")
-                print(generated_text)
-                print(f"Inference time: {inference_time:.2f} seconds")
-                print(f"Tokens per second: {tokens_per_second:.2f}")
-                print("---------------")
+                #print(f"Sample {k+1}:")
+                #print(generated_text)
+                #print(f"Inference time: {inference_time:.2f} seconds")
+                #print(f"Tokens per second: {tokens_per_second:.2f}")
+                #print("---------------")
 
                 results.append(
                     {

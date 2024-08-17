@@ -16,7 +16,6 @@ for folder in folders:
             final_results[folder] = json.load(f)
         results_dict = np.load(osp.join(folder, "all_results.npy"), allow_pickle=True).item()
         run_info = {}
-        print("Final results keys:", list(results_dict.keys()))
         for dataset in datasets:
             run_info[dataset] = {}
             val_losses = []
@@ -31,6 +30,7 @@ for folder in folders:
                     run_info[dataset]["iters"] = [info["iter"] for info in results_dict[k]]
                     val_losses.append([info["val/loss"] for info in results_dict[k]])
                     train_losses.append([info["train/loss"] for info in results_dict[k]])
+                    run_info[dataset]["val/loss"] = [info["val/loss"] for info in results_dict[k]]
                 mean_val_losses = np.mean(val_losses, axis=0)
                 mean_train_losses = np.mean(train_losses, axis=0)
                 if len(val_losses) > 0:
@@ -44,7 +44,6 @@ for folder in folders:
                 run_info[dataset]["val_loss_sterr"] = sterr_val_losses
                 run_info[dataset]["train_loss_sterr"] = stderr_train_losses
         results_info[folder] = run_info
-        print(run_info)
 
 # CREATE LEGEND -- ADD RUNS HERE THAT WILL BE PLOTTED
 labels = {
@@ -80,15 +79,11 @@ for dataset in datasets:
 
         gene_id=0
 
-        print(f"len:{length}")
-
         for j in range(0,max,length):
             for k in range(0,length,length//max_gene_id):
                 loss = results_info[run][dataset]["loss"][j+k:j+k+length//max_gene_id]
                 iters=range(0,len(loss)*10,10)
-                plt.plot(iters,loss, markers[mark%len(markers)],  color=colors[gene_id], label=f"gen:{gene_id+1} gene:{chr(65 + (mark+gene_id*4) % 26)}")
-                #plt.errorbar(iters, loss, fmt=markers[mark%len(markers)],  color=colors[gene_id])  # 点でプロット
-                print(k)
+                plt.plot(iters,loss, markers[mark%len(markers)], linestyle='-',  color=colors[gene_id],alpha=0.2)
                 mark +=1
             gene_id+=1
             mark=0
@@ -108,11 +103,24 @@ for dataset in datasets:
 for dataset in datasets:
     plt.figure(figsize=(10, 6))
     for i, run in enumerate(runs):
-        iters = results_info[run][dataset]["iters"]
         mean = results_info[run][dataset]["val_loss"]
-        sterr = results_info[run][dataset]["val_loss_sterr"]
-        plt.plot(iters, mean, label=labels[run], color=colors[i])
-        plt.fill_between(iters, mean - sterr, mean + sterr, color=colors[i], alpha=0.2)
+        max=len(mean)
+
+        gene_id=0
+        mark=0
+        length=int(max/(max_gene_id)/(max_gen))
+        #print(f"len:{length} / max:{max} max_gene_id:{max_gene_id} / maxgen:{max_gen}")
+        for j in range(max_gen):
+            for k in range(max_gene_id):
+                start = j*(length*max_gene_id)+k*(length)
+                end = start+length
+                iters = results_info[run][dataset]["iters"][start:end]
+                mean = results_info[run][dataset]["val/loss"][start:end]
+                plt.plot(iters, mean, markers[mark%len(markers)],linestyle='-',  color=colors[gene_id], alpha=0.2)
+                mark+=1
+                # break
+            gene_id+=1
+            mark=0
 
     plt.title(f"Validation Loss Across Runs for {dataset} Dataset")
     plt.xlabel("Iteration")
